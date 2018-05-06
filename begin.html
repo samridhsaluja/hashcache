@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HashCache the fun game with crypto and running around</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" style="height:90%"></div>
+    
+    <script>
+    var markers = [];
+    var currentcircle;
+    var distanceLimit = 4500;
+    var numberRandomPoints = 50;
+    var image = 'img/chest.png';
+    var map, infoWindow;
+      function add_markers(controlDiv, map) {
+        // Set CSS for the control border.
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = '#fff';
+        controlUI.style.border = '2px solid #fff';
+        controlUI.style.borderRadius = '3px';
+        controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.marginBottom = '22px';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to add markers';
+        controlDiv.appendChild(controlUI);
+
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.color = 'rgb(25,25,25)';
+        controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+        controlText.style.fontSize = '16px';
+        controlText.style.lineHeight = '38px';
+        controlText.style.paddingLeft = '5px';
+        controlText.style.paddingRight = '5px';
+        controlText.innerHTML = 'Start Game!';
+        controlUI.appendChild(controlText);
+
+        // Setup the click event listeners: 
+        controlUI.addEventListener('click', function() {
+          console.log("click registered");
+          var mappoints = generateMapPoints(map.getCenter(), distanceLimit, numberRandomPoints);
+          console.log("mappoints made");
+          console.log(mappoints);
+          createRandomMapMarkers(map, mappoints);
+          updateMarkers();
+        }
+      )};
+
+      //Create markers for the randomly generated points
+      function createRandomMapMarkers(map, mappoints) {
+          for (var i = 0; i < mappoints.length; i++) {
+              //Map points without the east/west adjustment
+              var newmappoint = new google.maps.LatLng(mappoints[i].latitude, mappoints[i].longitude);
+              var marker = new google.maps.Marker({
+                  position:newmappoint,
+                  animation: google.maps.Animation.DROP,
+                  map: map,
+                  icon: image,
+                  title: mappoints[i].latitude + ', ' + mappoints[i].longitude + ' | ' + mappoints[i].distance + 'm',
+                  zIndex: 2
+              });
+              markers.push(marker);
+          }
+      }
+
+      //Destroy all markers
+      function clearMarkers() {
+          for (var i = 0; i < markers.length; i++) {
+              markers[i].setMap(null);
+          }
+          markers = [];
+      }
+
+      // Update markers
+      function updateMarkers() {
+        window.setInterval(function(){
+          console.log("inside update markers")
+          var curr_index = Math.floor(Math.random()*markers.length)
+          console.log("curr_index ", curr_index)
+          markers[curr_index].setMap(null);
+          // Generate new map point
+          curr_center = map.getCenter()
+          random_point = randomGeo(curr_center, distanceLimit)
+          // replace all map point with new map point
+          var newmappoint = new google.maps.LatLng(random_point.latitude, random_point.longitude);
+          var marker = new google.maps.Marker({
+              position:newmappoint,
+              animation: google.maps.Animation.DROP,
+              map: map,
+              icon: image,
+              title: random_point.latitude + ', ' + random_point.longitude + ' | ' + random_point.distance + 'm',
+              zIndex: 2
+          });
+          if (distance(curr_center.lat(), curr_center.lng(), random_point.latitude, random_point.longitude) < 400) {
+            alert("YOU WIN!");
+          }
+          // markers[curr_index].setMap(marker);
+        }, 2000);
+      }
+
+      //Create random lat/long coordinates in a specified radius around a center point
+      function randomGeo(center, radius) {
+          var y0 = center.lat();
+          var x0 = center.lng();
+          var rd = radius / 111300; //about 111300 meters in one degree
+          console.log("y0, x0, rd ", y0, x0, rd)
+          var u = Math.random();
+          var v = Math.random();
+
+          var w = rd * Math.sqrt(u);
+          var t = 2 * Math.PI * v;
+          var x = w * Math.cos(t);
+          var y = w * Math.sin(t);
+
+          // //Adjust the x-coordinate for the shrinking of the east-west distances
+          // var xp = x / Math.cos(y0);
+
+          var newlat = y + y0;
+          var newlon = x + x0;
+          // var newlon2 = xp + x0;
+
+          return {
+              'latitude': newlat.toFixed(5),
+              'longitude': newlon.toFixed(5),
+              'distance': distance(center.lat(), center.lng(), newlat, newlon).toFixed(2),
+          };
+      }
+
+      //Generate a number of mappoints
+      function generateMapPoints(centerpoint, distance, amount) {
+          var mappoints = [];
+          for (var i=0; i<amount; i++) {
+              mappoints.push(randomGeo(centerpoint, distance));
+          }
+          print ("return value is ",mappoints)
+          return mappoints;
+      }
+
+      //Calc the distance between 2 coordinates as the crow flies
+      function distance(lat1, lon1, lat2, lon2) {
+          var R = 6371000;
+          var a = 0.5 - Math.cos((lat2 - lat1) * Math.PI / 180) / 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * (1 - Math.cos((lon2 - lon1) * Math.PI / 180)) / 2;
+          return R * 2 * Math.asin(Math.sqrt(a));
+      }
+
+      // Note: This example requires that you consent to location sharing when
+      // prompted by your browser. If you see the error "The Geolocation service
+      // failed.", it means you probably did not give permission for the browser to
+      // locate you.
+      
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -34.397, lng: 150.644},
+          zoom: 4
+        });
+        infoWindow = new google.maps.InfoWindow;
+
+        // Try HTML5 geolocation.
+        if (navigator.geolocation) {
+
+          navigator.geolocation.watchPosition(function(position) {
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            infoWindow.setPosition(pos);
+            infoWindow.setContent('Here you are! Good Luck.');
+            infoWindow.open(map);
+            // remove info window after some time delay
+            // infoWindow.close(map);
+            map.setCenter(pos);
+            map.setZoom(15);
+            var marker = new google.maps.Marker({
+              position: pos,
+              map: map,
+              zIndex: 3
+            });
+            
+          }, function() {
+            handleLocationError(true, infoWindow, map.getCenter());
+          });
+        } else {
+          // Browser doesn't support Geolocation
+          handleLocationError(false, infoWindow, map.getCenter());
+        }
+
+        // Create the DIV to hold the control and call the CenterControl()
+        // constructor passing in this DIV.
+        var addmarker_button_div = document.createElement('div');
+        var add_marker = new add_markers(addmarker_button_div, map);
+
+        addmarker_button_div.index = 1;
+        map.controls[google.maps.ControlPosition.TOP_CENTER].push(addmarker_button_div);
+
+      }
+
+      function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
+        infoWindow.open(map);
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDHucaGvHWmu_BJVP83NkKWQtyfOIxYzWw&callback=initMap"
+    async defer></script>
+  </body>
+</html>
