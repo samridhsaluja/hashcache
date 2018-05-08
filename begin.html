@@ -58,6 +58,7 @@
 
         // Setup the click event listeners: 
         controlUI.addEventListener('click', function() {
+          controlUI.style.display = "none";
           var mappoints = generateMapPoints(map.getCenter(), distanceLimit, numberRandomPoints);
           createRandomMapMarkers(map, mappoints);
           updateMarkers();
@@ -196,7 +197,6 @@
               icon: prof,
               zIndex: 3
             });
-            
           }, function() {
             handleLocationError(true, infoWindow, map.getCenter());
           });
