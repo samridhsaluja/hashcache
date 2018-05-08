@@ -19,14 +19,15 @@
     </style>
   </head>
   <body>
-    <div id="map" style="height:90%"></div>
+    <div id="map"></div>
     
     <script>
     var markers = [];
     var currentcircle;
-    var distanceLimit = 4500;
-    var numberRandomPoints = 50;
+    var distanceLimit = 5000;
+    var numberRandomPoints = 25;
     var image = 'img/chest.png';
+    var prof = 'img/profile2copy.png';
     var map, infoWindow;
       function add_markers(controlDiv, map) {
         // Set CSS for the control border.
@@ -37,6 +38,7 @@
         controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
         controlUI.style.cursor = 'pointer';
         controlUI.style.marginBottom = '22px';
+        controlUI.style.marginTop = '22px';
         controlUI.style.textAlign = 'center';
         controlUI.title = 'Click to add markers';
         controlDiv.appendChild(controlUI);
@@ -45,19 +47,18 @@
         var controlText = document.createElement('div');
         controlText.style.color = 'rgb(25,25,25)';
         controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
-        controlText.style.fontSize = '16px';
+        controlText.style.fontSize = '32px';
         controlText.style.lineHeight = '38px';
-        controlText.style.paddingLeft = '5px';
-        controlText.style.paddingRight = '5px';
+        controlText.style.paddingLeft = '10px';
+        controlText.style.paddingRight = '10px';
+        controlText.style.paddingBottom = '10px';
+        controlText.style.paddingTop = '10px';
         controlText.innerHTML = 'Start Game!';
         controlUI.appendChild(controlText);
 
         // Setup the click event listeners: 
         controlUI.addEventListener('click', function() {
-          console.log("click registered");
           var mappoints = generateMapPoints(map.getCenter(), distanceLimit, numberRandomPoints);
-          console.log("mappoints made");
-          console.log(mappoints);
           createRandomMapMarkers(map, mappoints);
           updateMarkers();
         }
@@ -109,10 +110,11 @@
               zIndex: 2
           });
           if (distance(curr_center.lat(), curr_center.lng(), random_point.latitude, random_point.longitude) < 400) {
-            alert("YOU WIN!");
+            alert("Congrats! You just found some treasure: Wait upto 1 min for the transaction to confirm. Happy adventures!");
+
           }
           // markers[curr_index].setMap(marker);
-        }, 2000);
+        }, 10000);
       }
 
       //Create random lat/long coordinates in a specified radius around a center point
@@ -120,7 +122,6 @@
           var y0 = center.lat();
           var x0 = center.lng();
           var rd = radius / 111300; //about 111300 meters in one degree
-          console.log("y0, x0, rd ", y0, x0, rd)
           var u = Math.random();
           var v = Math.random();
 
@@ -149,7 +150,6 @@
           for (var i=0; i<amount; i++) {
               mappoints.push(randomGeo(centerpoint, distance));
           }
-          print ("return value is ",mappoints)
           return mappoints;
       }
 
@@ -168,7 +168,8 @@
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: -34.397, lng: 150.644},
-          zoom: 4
+          zoom: 3,
+          disableDefaultUI: true
         });
         infoWindow = new google.maps.InfoWindow;
 
@@ -181,15 +182,18 @@
               lng: position.coords.longitude
             };
             infoWindow.setPosition(pos);
-            infoWindow.setContent('Here you are! Good Luck.');
+            infoWindow.setContent('Here you go! Good Luck.');
             infoWindow.open(map);
             // remove info window after some time delay
-            // infoWindow.close(map);
-            map.setCenter(pos);
+            setTimeout(function () {
+              infoWindow.close(map);
+            }, 7000);
+            map.setCenter({lat: position.coords.latitude,lng: position.coords.longitude});
             map.setZoom(15);
             var marker = new google.maps.Marker({
               position: pos,
               map: map,
+              icon: prof,
               zIndex: 3
             });
             
